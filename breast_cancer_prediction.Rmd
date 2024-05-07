@@ -1,0 +1,548 @@
+---
+title: "R Notebook"
+output:
+  html_notebook: default
+  pdf_document: default
+---
+
+## 1. Introduction
+Breast cancer remains one of the most common and impactful forms of cancer globally, leading to significant research efforts aimed at early detection and treatment. Breast Cancer Research Foundation (BCRF)  estimates that approximately 313,510 individuals will be diagnosed with breast cancer in the United States, in 2024, underscoring the significant health impact of this disease (Breast Cancer Research Foundation, 2024). Therefore, early detection using machine learning predictive modeling has become a significant area of focus.
+
+
+The development of those predictive models can substantially help in identifying potential cases of breast cancer based on various diagnostic features. In this context, a dataset that compile clinical and demographic information, typically consisting of multiple features related to patient health and tumor characteristics, is used to train models to distinguish between benign (non-cancerous) and malignant (cancerous) tumors. Such predictive modeling plays a crucial role in enhancing early diagnosis, which is vital for improving treatment outcomes and survival rates. The use of a dataset with 32 distinct features in breast cancer prediction exemplifies the complexity and the high-dimensional nature of medical data analysis, where accuracy and precision are paramount for effective diagnosis and patient care.
+
+## 2. Analysis
+There are different techniques available for data analysis, such as CRISP-DM (Cross-Industry Standard Process for Data Mining), SEMMA and KDD. However, for the analysis of the choosen dataset, the CRISP-DM methodology will be followed. According to IBM, CRISP-DM involves several stages which guide the entire data analysis process (IBM, 2021):
+
+- Business understanding
+- Data understanding
+- Data preparation
+- Modelling
+- Evaluation
+- Deployment
+
+
+## 2.1 Business Understanding
+
+The business understanding phase is important because it sets the foundation for a successful data analysis project. This analysis has some specific objectives and success criteria.
+
+The following are the main objectives of this analysis,
+
+-   The primary goal is to develop a predictive model that can classify breast tumors as either malignant or benign based on the features provided in the dataset.
+
+-   Secondary goal include assessing the performance of the machine learning algorithm.
+
+-   Ultimately, the project aims to contribute to the advancement of healthcare by providing a reliable tool for assisting medical professionals in diagnosing breast cancer.
+
+The following defines the success criteria of this analysis,
+
+-   The success of the project will be measured based on the accuracy, precision, recall, and F1-score of the predictive model.
+
+## 2.2 Data Understanding
+
+The data understanding phase is crucial in any data analysis project as it forms the backbone of the entire analytical process. During this phase, insights into the structure, quality, and potential limitations of the available data can be gained. Understanding the data allows to make informed decisions about which analytical techniques are appropriate, how to preprocess the data effectively, and what insights can be derived from it. The identification of potential biases, errors, or missing information is facilitated by a thorough understanding of the data, enabling these issues to be mitigated early on in the analysis.
+
+### 2.2.1 Data Collection
+
+Data collection is a foundation step in research and analysis processes, involving the systematic gathering of information pertinent to a specific inquiry or investigation. There are various methodologies for data collection including surveys, interviews, web scrapping. However, in this analysis, the need for such a stage is eliminated as the data is sourced directly from Kaggle.
+
+### 2.2.2 Describing Data
+
+In this phase, an initial exploratory data analysis is undertaken to gain a broad understanding of the dataset, encompassing evaluations of its size, the quantity of features (columns), and the data types associated with each feature.
+
+```{r}
+#Loading the dataset into a variable called bcp_dataset
+#bcp stands for breast cancer prediction.
+
+bcp_dataset <- read.csv("breast_cancer_prediction.csv")
+
+```
+
+```{r}
+#Checking the first 10 rows of the dataset to have a quick idea about the dataset.
+head(bcp_dataset, 10)
+```
+
+```{r}
+#Checking the last 10 rows of the dataset.
+tail(bcp_dataset, 10)
+```
+
+```{r}
+#Checking the dimension of the dataset.
+paste(dim(bcp_dataset))
+```
+
+The dataset contains 569 rows and 32 columns.
+
+```{r}
+#Checking the data type of each feature
+feature_data_types <- sapply(bcp_dataset, class)
+feature_data_types
+```
+
+```{r}
+# Finding the unique data types present in the dataset
+unique_data_types <- unique(feature_data_types)
+print(unique_data_types)
+```
+
+```{r}
+#Checking the number of features that falls into each of those data types.
+data_type_counts <- table(feature_data_types)
+print(data_type_counts)
+```
+
+The dataset contains three different data types which include integer, character, and numeric. There is only 1 column with "character" data type, 1 column with "integer" data type, and 30 columns with numeric data type.
+
+### 2.2.3 Data Exploration
+
+The data exploration stage is a crucial phase within the broader data understanding process, where insights into the structure, characteristics, and quality of the dataset can be obtained. This stage involves a systematic examination of the data through visualizations, statistical analysis, and exploratory techniques to uncover patterns, relationships, and potential issues. By exploring the dataset, it would be helpful to understand the variables, identify trends, assess data quality, and inform subsequent steps in the analysis process. Data exploration serves as a foundation for making informed decisions regarding data preprocessing, feature selection, and modeling strategies, ultimately leading to more accurate and effective analysis outcomes.
+
+#### a) Visualizing Data
+
+Data visualization is essential because it simplifies complex information, making it easier to understand and interpret. By presenting data visually, patterns, trends, and relationships become more apparent, facilitating better decision-making and communication. There are several ways of data visualization which include bar charts, histograms, line charts, scatter plots, pie charts, heatmaps, box plots, and tree maps.
+
+To visually explore the distribution of diagnoses in the dataset, a bar chart is ideal. Since the "diagnosis" column contains categorical values representing two types: Malignant (M) and Benign (B), a bar chart effectively illustrates the frequency of each diagnosis.
+
+```{r}
+# Creating a bar chart for the "diagnosis" column
+barplot(table(bcp_dataset$diagnosis), 
+        main = "Distribution of Diagnoses", 
+        xlab = "Diagnosis", 
+        ylab = "Frequency", 
+        col = c("skyblue", "lightgreen"),
+        names.arg = c("Benign (B)", "Malignant (M)"))
+```
+
+Based on the bar chart, which illustrates the distribution of diagnoses, it is evident that the dataset contains a higher frequency of Benign (B) diagnoses compared to Malignant (M) diagnoses. This observation suggests that Benign cases are more prevalent in the dataset compared to Malignant cases.
+
+Since all the columns in the dataset are numeric, except for the first two columns, histograms present an ideal visualization method to explore the distribution of these features.
+
+```{r}
+
+# Create a histogram for the first column
+hist(bcp_dataset$Radius_mean, col = "blue", main = "Histogram of Radius", xlab = "Value", ylab = "Frequency", xlim = range(c(bcp_dataset$Radius_mean, bcp_dataset$radius_se, bcp_dataset$radius_worst)), ylim = c(0, max(hist(bcp_dataset$Radius_mean)$counts, hist(bcp_dataset$radius_se)$counts, hist(bcp_dataset$radius_worst)$counts)))
+
+# Overlay histograms for the second and third columns
+hist(bcp_dataset$radius_se, col = "red", add = TRUE)
+hist(bcp_dataset$radius_worst, col = "green", add = TRUE)
+
+# Add a legend
+legend("topright", legend = c("Column1", "Column2", "Column3"), fill = c("blue", "red", "green"))
+
+
+
+```
+```{r}
+# Loading necessary libraries
+library(ggplot2)
+
+# Getting column names of numeric columns
+numeric_columns <- names(bcp_dataset)[-(1:2)]
+
+# Creating histograms for each numeric column
+for (col in numeric_columns) {
+  p <- ggplot(data = bcp_dataset, aes(x = !!as.name(col))) +
+    geom_histogram(fill = "skyblue", color = "black") +
+    labs(title = paste("Histogram of", col)) +
+    theme_minimal()
+  
+  # Printing each histogram
+  print(p)
+}
+
+
+```
+
+```{r}
+# Create box plots for each numeric column
+for (col in numeric_columns) {
+  # Create a box plot for the current column
+  p <- ggplot(data = bcp_dataset, aes(y = !!as.name(col))) +
+    geom_boxplot(fill = "skyblue", color = "black") +
+    labs(title = paste("Box Plot of", col)) +
+    theme_minimal()
+  
+  # Print the box plot
+  print(p)
+}
+
+```
+
+#### b) Examining Data Quality
+
+Ensuring data quality is very important. Jack E. Olson claims that inaccurate data incurs significant costs for organizations in rectification efforts, customer attrition, forgone opportunities, and erroneous decisions. Examining data quality involves assessing the completeness, consistency, and accuracy of the dataset to ensure its reliability for analysis. This process includes identifying and addressing various issues such as missing values, outliers, duplicates, and inconsistencies. By thoroughly examining data quality, the trustworthiness of analysis results can be enhanced and mitigate potential biases or errors that could impact the validity of findings.
+
+-   Identifying variables with missing values and assessing their proportion in the dataset.
+
+```{r}
+missing_values <- colSums(is.na(bcp_dataset[, 2: 32]))
+missing_values
+```
+
+```{r}
+na_percentage <- missing_values / nrow(bcp_dataset) * 100
+print(na_percentage)
+
+```
+
+```{r}
+na_summary <- data.frame(Missing_Count = missing_values, Missing_Percentage = na_percentage)
+
+na_summary
+```
+
+The analysis reveals that the dataset contains a negligible amount of missing values, with the highest percentage of missing values in any particular column being just slightly above 2%. While addressing missing values is crucial for ensuring the integrity of the dataset, the observed percentage indicates that missing values are relatively minor and manageable.
+
+In the subsequent stage of the analysis, appropriate methods will be employed to handle these missing values effectively.
+
+```{r}
+# Installing and loading the gplots package
+#install.packages("gplots")
+#library(gplots)
+
+# Sample data
+#hm_num_data <- matrix(bcp_dataset[, 3:32])
+
+
+# Create heatmap with heatmap.2()
+#heatmap.2(hm_num_data, Rowv = NA, Colv = NA, dendrogram = "none", scale = "none", col = cm.colors(256))
+```
+
+
+- Checking if there is any duplicate records in the dataset.
+```{r}
+# Checking for duplicate rows
+duplicate_rows <- bcp_dataset[duplicated(bcp_dataset), ]
+
+# Printing duplicate rows, if any
+if (nrow(duplicate_rows) > 0) {
+  print("Duplicate rows found:")
+  print(duplicate_rows)
+} else {
+  print("No duplicate rows found.")
+}
+
+```
+According to this output, there is no duplicated records in the dataset.
+
+
+## 2.3 Data Preparation
+
+Data preparation encompasses the process of transforming raw data into a clean, structured format suitable for analysis or modeling tasks. It is essential for ensuring data quality, consistency, and reliability, ultimately enabling accurate and meaningful insights to be derived from the data. The importance of data preparation lies in its role in addressing various data challenges, such as missing values, outliers, and inconsistencies, which can adversely affect analysis outcomes if left unattended. The steps involved in data preparation typically include data cleaning, transformation, integration, formatting, splitting, and documentation. These steps aim to remove noise, standardize data formats, enhance data quality, and prepare the dataset for further analysis or modeling. By systematically preparing the data, analysts can mitigate potential biases, improve the robustness of analysis results, and make informed decisions based on trustworthy data.
+
+
+
+### 2.3.1 Handling Missing Values
+Handling missing values involves identifying and addressing instances where data values are not present in the dataset. Techniques such as imputation with estimated values, deletion of entire rows with missing values, or substitution with measures like the median or mode are can be used to handle those missing values. For the breast cancer prediction dataset, the missing values will be imputed with the mean.
+
+
+- Before handling the missing values, it is important to convert the categorical columns into a logical column.
+
+In the breast cancer prediction dataset, there is a column called diagnosis which contains two categorical values. These values are M (Malignant) or B (Benign). So, these values will be replaced by 1 and 0.
+
+```{r}
+# Replace 'M' with 1 and 'B' with 0 in the 'diagnosis' column
+modified_bcp_dataset <- bcp_dataset
+modified_bcp_dataset$diagnosis <- ifelse(bcp_dataset$diagnosis == "M", 1, 0)
+head(modified_bcp_dataset, 10)
+tail(modified_bcp_dataset, 10)
+
+```
+```{r}
+#install.packages("gplots")
+library(gplots)
+ad_matrix <- as.matrix(modified_bcp_dataset)
+heatmap.2(ad_matrix, dendrogram="row", scale="row", trace="none", key=TRUE)
+```
+
+In the heatmap diagram above, the white stripes indicate that there are some missing values in the dataset.
+
+
+```{r}
+#After handling the missing values, the dataset will be stored in a new variable called "imputed_bcp_dataset".
+
+
+# Imputing missing values with mean
+imputed_bcp_dataset <- apply(modified_bcp_dataset, 2, function(x) ifelse(is.na(x), mean(x, na.rm = TRUE), x))
+```
+
+- Now, checking again if there is any missing values in the dataset.
+```{r}
+missing_value_sums <- colSums(is.na(imputed_bcp_dataset))
+missing_value_sums
+```
+It clearly shows there is no more missing values in the dataset. This also reflects in the heatmap diagram bellow.
+
+
+```{r}
+#install.packages("gplots")
+library(gplots)
+ad_matrix <- as.matrix(imputed_bcp_dataset)
+heatmap.2(ad_matrix, dendrogram="row", scale="row", trace="none", key=TRUE)
+```
+
+
+
+### 2.3.2 Features and Target Selection
+In the Features and Target Selection stage, the relevant features (independent variables) and the target variable (dependent variable) are identified and selected from the dataset. Features represent the variables used to predict or explain the target variable, while the target variable is the variable of interest that the model aims to predict or understand. This stage involves analyzing the dataset to determine which features are likely to have predictive power or explanatory value for the target variable. The selected features are then separated from the target variable to form the input data for subsequent modeling or analysis tasks. This process is crucial for defining the scope of the analysis and ensuring that the model focuses on the most relevant information for achieving the desired outcomes.
+
+The dataset contains a variables called "id" which may not have an considerable
+impact on the prediction of diagnosis. Therefore, that varable will not be passed to the algorithm and dropped in this stage.
+
+- Dimension before dropping id column:
+```{r}
+paste(dim(imputed_bcp_dataset))
+```
+```{r}
+# Storing the dataset in a new variable with the dropped column
+new_bcp_dataset <- imputed_bcp_dataset[ , 2:ncol(imputed_bcp_dataset)]
+```
+- Dimension after dropping id column:
+```{r}
+paste(dim(new_bcp_dataset))
+```
+In the dataset, the 'diagnosis' column represents the target variable, while the remaining columns are features. However, it may be needed to omit some features based on their correlation with each other.
+
+- It is important to check the correlation among the features before selecting the features. The following code shows the correlation matrix.
+```{r}
+# Calculate the correlation matrix
+correlation_matrix <- cor(new_bcp_dataset[ , -1])
+
+# Print the correlation matrix
+print(correlation_matrix)
+```
+
+
+```{r}
+
+#install.packages("caret")
+
+# Loading necessary library
+library(caret)
+suppressWarnings(library(caret))
+suppressWarnings(library(ggplot2))
+
+
+# Finding columns with correlations over 0.8
+highly_correlated_cols <- findCorrelation(correlation_matrix, cutoff = 0.8)
+
+# Obtaining names of columns to drop
+cols_to_drop <- colnames(correlation_matrix)[highly_correlated_cols]
+
+# The breast cancer dataset after dropping the highly correlated dataset.
+processed_bcp_dataset <- new_bcp_dataset[, !colnames(new_bcp_dataset) %in% cols_to_drop]
+
+head(processed_bcp_dataset, 3)
+
+```
+- The dimension of the processed dataset after dropping the highly correlated columns.
+```{r}
+print(dim(processed_bcp_dataset))
+```
+```{r}
+# Calculate the correlation matrix
+new_correlation_matrix <- cor(processed_bcp_dataset[ , -1])
+
+# Print the correlation matrix
+print(new_correlation_matrix)
+```
+
+- Selecting the target and features from the processed dataset.
+The target will be stored in a variable called Y, and the features will be stored in a variable called X.
+
+```{r}
+# Separating target variable (diagnosis) and features
+y <- processed_bcp_dataset[, "diagnosis", drop = FALSE]
+X <- processed_bcp_dataset[, -1]
+
+
+head(y, 5)
+print("===========================================================")
+head(X, 5)
+
+```
+
+### 2.3.3 Feature Scaling
+
+```{r}
+# Standardizing or scaling the features using the scale function
+standardized_X <- scale(X)
+
+# Printing the standardized features
+print(standardized_X)
+
+```
+
+- Combining scaled numeric variables with the diagnosis variable
+```{r}
+scaled_bcp_dataset <- cbind(diagnosis = y, standardized_X)
+head(scaled_bcp_dataset, 3)
+print("------------------------------")
+dim(scaled_bcp_dataset)
+```
+
+
+### 2.3.4 Splitting Data
+
+For the processed dataset, an 80% to 20% split is adopted, with 80% of the data allocated to the training set while the remaining 20% to the test set. This split allows a significant portion of the data to be used for training while retaining a sufficient portion for evaluating the model's performance on unseen
+data.
+
+
+```{r}
+# Loading the necessary library
+library(caret)
+# Set the seed for reproducibility
+set.seed(123)
+
+# Splitting Y into training and test sets
+train_index <- createDataPartition(y, p = 0.8, list = FALSE)
+
+# Training dataset
+train_dataset <- scaled_bcp_dataset[train_index, ]
+
+# Converting train_dataset to a data frame
+train_dataset <- as.data.frame(train_dataset)
+
+#Test dataset
+test_dataset <- scaled_bcp_dataset[train_index, ]
+test_dataset <- as.data.frame(test_dataset)
+
+
+print(train_dataset)
+paste("==========================================================================")
+print(test_dataset)
+paste("==========================================================================")
+
+```
+
+
+## 2.4 Modelling
+Modeling in data science involves creating mathematical representations of real-world phenomena using data (Simplilearn, 2023). These representations, or models, are used to understand patterns, relationships, and trends in the data, as well as to make predictions or decisions. Models can range from simple linear regressions to complex machine learning algorithms.
+
+For this project, multiple linear regression, and logistic regression models will be utilized for the modeling process, leveraging their respective strengths and capabilities to analyze the data, make predictions, and gain valuable insights.
+
+### 2.4.1 Logistic Regression
+```{r}
+# Fitting logistic regression model
+log_reg_model <- glm(diagnosis ~ ., data = train_dataset, family = binomial())
+
+# Predicting probabilities on the test dataset
+probabilities_lr <- predict(log_reg_model, newdata = test_dataset, type = "response")
+
+# Converting probabilities to binary outcomes using a threshold of 0.5
+predictions_lr <- ifelse(probabilities_lr > 0.5, 1, 0)
+
+actuals_lr <- test_dataset$diagnosis
+print(actuals_lr)
+
+```
+### 2.4.2 Decision Tree
+
+```{r}
+# Making sure the rpart package is installed and loaded
+if (!require("rpart")) {
+    install.packages("rpart")
+    library(rpart)
+}
+```
+
+
+```{r}
+
+# Fitting the Decision Tree model
+decision_tree_model <- rpart(diagnosis ~ ., data = train_dataset, method = "class")
+
+# Predicting on the test dataset
+# Using type = "class" to get the predicted class directly
+predictions_dt <- predict(decision_tree_model, newdata = test_dataset, type = "class")
+
+# Printing the actuals to compare
+actuals_dt <- test_dataset$diagnosis
+print(actuals_dt)
+
+```
+
+## 2.5 Evaluation
+
+In the evaluation of the two used predictive models, Logistic Regression (LR) and Decision Tree (DT), a systematic approach has been followed, where the performance metrics such as accuracy, precision, recall, and F1-score were calculated for each. These metrics are essential in determining the effectiveness of each model in classifying the outcomes correctly.
+
+### 2.5.1 Effectiveness of the Logistic Regression Model
+
+```{r}
+# Calculating the classification metrics using the caret package
+library(caret)
+
+# Using confusion matrix to calculate metrics
+conf_matrix_lr <- confusionMatrix(as.factor(predictions_lr), as.factor(actuals_lr))
+
+# Printing model accuracy
+print(paste("Accuracy:", conf_matrix_lr$overall['Accuracy']))
+
+# Converting predictions and actuals to factors
+predictions_factor_lr <- factor(predictions_lr, levels = c(0, 1))
+actuals_factor_lr <- factor(actuals_lr, levels = c(0, 1))
+
+# Calculating Precision, Recall, and F1 Score using factors
+precision <- posPredValue(predictions_factor_lr, actuals_factor_lr, positive = "1")
+recall <- sensitivity(predictions_factor_lr, actuals_factor_lr, positive = "1")
+f1_score <- (2 * precision * recall) / (precision + recall)
+
+print(paste("Precision:", precision))
+print(paste("Recall:", recall))
+print(paste("F1 Score:", f1_score))
+
+```
+
+### 2.5.1 Effectiveness of the Decision Tree Model
+
+```{r}
+# Converting predictions and actuals to factor
+predictions_factor_dt <- factor(predictions_dt, levels = c(0, 1))
+actuals_factor_dt <- factor(actuals_dt, levels = c(0, 1))
+
+# Creating a confusion matrix
+conf_matrix_dt <- confusionMatrix(predictions_factor_dt, actuals_factor_dt)
+
+# Printing model accuracy
+print(paste("Accuracy:", conf_matrix_dt$overall['Accuracy']))
+
+# Calculateing Precision, Recall, and F1 Score using the confusion matrix
+precision <- posPredValue(predictions_factor_dt, actuals_factor_dt, positive = "1")
+recall <- sensitivity(predictions_factor_dt, actuals_factor_dt, positive = "1")
+f1_score <- (2 * precision * recall) / (precision + recall)
+
+# Printing Precision, Recall, and F1 Score
+print(paste("Precision:", precision))
+print(paste("Recall:", recall))
+print(paste("F1 Score:", f1_score))
+```
+
+
+In the comparison of the performance metrics between the Logistic Regression (LR) model and the Decision Tree (DT) model, distinct differences were observed across various key indicators. The LR model demonstrated superior performance in terms of accuracy, achieving a rate of approximately 97.59%, compared to the DT model's 96.05%. Precision, which evaluates the proportion of true positive predictions among all positive predictions made, was higher in the LR model at 96.84%, as opposed to 94.90% in the DT model. Similarly, recall, which measures the model's ability to correctly identify all actual positives, was observed to be better in the LR model at 96.23% versus 93.71% for the DT model. The F1 Score, which harmonizes precision and recall, also reflected a stronger performance in the LR model, with a score of 96.53% compared to 94.30% in the DT model.
+
+
+Given the consistently higher scores in accuracy, precision, recall, and F1 Score, the Logistic Regression model can be considered as the best fit model for this analysis. Its superior performance across all evaluated metrics indicates a higher overall effectiveness in classifying outcomes accurately, thereby making it the more reliable choice in scenarios where precision and recall are critically important.
+
+## 2.6 Deployment
+
+The deployment stage of the CRISP-DM methodology usually involves implementation of the developed model or solution into the operational environment. This involves integrating the solution with existing systems, deploying it to users, and ensuring that it functions effectively in real-world scenarios. Documentation and training materials may also be provided to support users in utilizing the deployed solution. Ongoing monitoring and maintenance procedures are established to ensure the continued performance and relevance of the deployed model or solution.
+
+However, this project does not have any actual deployment of the model as this is only a demonstration analysis.
+
+## 3. Conclusion
+
+In the domain of breast cancer prediction, the analysis followed the CRISP-DM methodology, encompassing data understanding, preparation, modeling, evaluation, and deployment stages. Two models, Decision Tree and Logistic Regression, were applied to the dataset to predict breast cancer diagnosis. Through a comprehensive comparison of model effectiveness, it was determined that the Logistic Regression model is deemed more suitable for this analysis, showcasing superior performance in accurately classifying breast cancer cases. This decision was reached based on rigorous evaluation metrics and considerations of model interpretability and generalization capability. Consequently, the Logistic Regression model emerges as the preferred choice for breast cancer prediction within this context, offering valuable insights for clinical decision-making and further research endeavors.
+
+
+
+## 4. References
+
+Breast Cancer Research Foundaton (2024) Breast Cancer Statistics And Resources. Available from: https://www.bcrf.org/breast-cancer-statistics-and-resources/ [Accessed 23 April 2024]. 
+
+IBM (2021) CRISP-DM Help Overview. Available from: https://www.ibm.com/docs/en/spss-modeler/saas?topic=dm-crisp-help-overview [Accessed 22 April 2024]. 
+
+Olson, J.E. (2003) The Data Quality Problem. In: Olson, J.E., ed. Data Quality: The Accuracy Dimension. 1st ed. London: Morgan Kaufmann. Ch. 1. p.3. 
+
+Simplilearn (2023) What is Data Modelling? Available from: https://www.simplilearn.com/what-is-data-modeling-article [Accessed 24 April 2024]. 
